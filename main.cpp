@@ -24,6 +24,7 @@
 #include <sstream>
 #include <mutex>
 #include <vector>
+#include <csignal>
 
 #define COLOR_ERROR "\u001b[31m"
 #define COLOR_WARN "\u001b[38:5:202m"
@@ -33,6 +34,8 @@
 std::mutex mu;
 int thread_num = 0;
 bool should_exit = false;
+std::vector<std::thread> handles;
+bool can_exit = false;
 
 enum MessageType {
 
@@ -63,6 +66,8 @@ int parse_int(const std::string& input) {
 }
 
 inline int ack(int m, int n) {
+
+    if (should_exit) { return 0; }
 
     if (m == 0) { return n + 1; }
     else if (m > 0 && n == 0) { return ack(m - 1, 1); }
@@ -121,7 +126,7 @@ void do_work() {
     print_sync(msg, INFO);
 
     int run = 0;
-    while (!should_exit && run < 4) {
+    while (!should_exit || run < 4) {
 
         int m = this_thread + thread_num * run;
 
@@ -136,6 +141,20 @@ void do_work() {
 
 }
 
+void attention(int signum) {
+
+    print_sync("Waiting for threads to exit...", INFO);
+    should_exit = true;
+
+    for (int i = 0; i < handles.size(); i++) {
+        handles[i].join();
+    }
+
+    print_sync("All threads exited...", INFO);
+    can_exit = true;
+
+}
+
 int main(int argc, const char** argv) {
 
     std::cout << "----------------------------------------" << std::endl;
@@ -143,35 +162,40 @@ int main(int argc, const char** argv) {
     std::cout << "      Copyright (C) 2019  Jaco Malan" << std::endl;
     std::cout << "----------------------------------------\n" << std::endl;
 
-    int option = 1;
+    while (true) {
 
-    if (!(argc > 1))
-        option = parse_int(get_input("Please enter a number of threads: "));
-    else
-        option = parse_int(argv[1]);
+        std::string input;
+        input = get_input("Please enter a number of threads (type q to quit): ");
 
-    if (option <= 0) {
-        std::fprintf(stderr, "Please enter a valid number greater than 0!\n");
-        return -1;
+        if (input == "q") {
+            break;
+        }
+
+        int option = parse_int(input);
+
+        if (option <= 0) {
+            std::fprintf(stderr, "Please enter a valid number greater than 0!\n");
+            return -1;
+        }
+
+        std::cout << "Starting 4 rounds of Ackermann stress-testing..." << std::endl;
+        std::cout << "Press Ctrl-C to stop the test at any time...\n" << std::endl;
+
+        std::cout << "Initializing " << option << " threads..." << std::endl;
+        handles = std::vector<std::thread>();
+        for (int i = 0; i < option; i++) {
+
+            print_sync("Starting thread " + std::to_string(i) + "...", INFO);
+            handles.emplace_back(std::thread(do_work));
+
+        }
+
+        std::signal(SIGINT, attention);
+
+        while (!can_exit) {
+
+        }
     }
-
-    std::cout << "Starting 4 rounds of Ackermann stress-testing..." << std::endl;
-    std::cout << "Press Ctrl-C to stop the test at any time...\n" << std::endl;
-
-    std::cout << "Initializing " << option << " threads..." << std::endl;
-    std::vector<std::thread> handles;
-    for (int i = 0; i < option; i++) {
-
-        print_sync("Starting thread " + std::to_string(i) + "...", INFO);
-        handles.emplace_back(std::thread(do_work));
-
-    }
-
-    for (int i = 0; i < handles.size(); i++) {
-        handles[i].join();
-    }
-
-    should_exit = true;
 
     return 0;
 
