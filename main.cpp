@@ -33,9 +33,11 @@
 
 std::mutex mu;
 int thread_num = 0;
+int max_threads = 0;
 bool should_exit = false;
 std::vector<std::thread> handles;
 bool can_exit = false;
+std::vector<std::string> menuItems;
 
 enum MessageType {
 
@@ -141,9 +143,9 @@ void do_work() {
 
 }
 
-void attention(int signum) {
+void sigint_receive(int signum) {
 
-    print_sync("Waiting for threads to exit...", INFO);
+    print_sync("\nSIGINT: Waiting for threads to exit...\n", INFO);
     should_exit = true;
 
     for (int i = 0; i < handles.size(); i++) {
@@ -162,39 +164,48 @@ int main(int argc, const char** argv) {
     std::cout << "      Copyright (C) 2019  Jaco Malan" << std::endl;
     std::cout << "----------------------------------------\n" << std::endl;
 
+    menuItems.emplace_back("Start stress test");
+    menuItems.emplace_back("Quit");
+
     while (true) {
 
-        std::string input;
-        input = get_input("Please enter a number of threads (type q to quit): ");
+        for (int i = 0; i < menuItems.size(); i++)
+            print_sync(std::to_string(i + 1) + ". " + menuItems[i]);
 
-        if (input == "q") {
+        int option = parse_int(get_input("Please select an option: "));
+
+        if (option <= 0 || option > menuItems.size()) {
+
+            print_sync("Please enter a valid option!");
+            return -1;
+
+        }
+
+        if (option == 1) {
+
+            max_threads = std::thread::hardware_concurrency();
+            std::cout << "Starting 4 rounds of Ackermann stress-testing..." << std::endl;
+            std::cout << "Press Ctrl-C to stop the test at any time...\n" << std::endl;
+
+            std::cout << "Initializing " << max_threads << " threads..." << std::endl;
+            handles = std::vector<std::thread>();
+            for (int i = 0; i < max_threads; i++) {
+
+                print_sync("Starting thread " + std::to_string(i) + "...", INFO);
+                handles.emplace_back(std::thread(do_work));
+
+            }
+
+            std::signal(SIGINT, sigint_receive);
+
+            while (!can_exit) {
+
+            }
+
+        } else {
             break;
         }
 
-        int option = parse_int(input);
-
-        if (option <= 0) {
-            std::fprintf(stderr, "Please enter a valid number greater than 0!\n");
-            return -1;
-        }
-
-        std::cout << "Starting 4 rounds of Ackermann stress-testing..." << std::endl;
-        std::cout << "Press Ctrl-C to stop the test at any time...\n" << std::endl;
-
-        std::cout << "Initializing " << option << " threads..." << std::endl;
-        handles = std::vector<std::thread>();
-        for (int i = 0; i < option; i++) {
-
-            print_sync("Starting thread " + std::to_string(i) + "...", INFO);
-            handles.emplace_back(std::thread(do_work));
-
-        }
-
-        std::signal(SIGINT, attention);
-
-        while (!can_exit) {
-
-        }
     }
 
     return 0;
