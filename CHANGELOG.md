@@ -6,3 +6,7 @@
 ## v0.1.0 -- 2019-03-24
 
 * Added a cool new menu.
+
+## v0.1.1 -- 2019-03-25
+
+* Optimized std::vector usage.

@@ -164,13 +164,18 @@ int main(int argc, const char** argv) {
     std::cout << "      Copyright (C) 2019  Jaco Malan" << std::endl;
     std::cout << "----------------------------------------\n" << std::endl;
 
+    menuItems.reserve(2);
     menuItems.emplace_back("Start stress test");
     menuItems.emplace_back("Quit");
 
     while (true) {
 
+        // TODO: Add more options.
+
         for (int i = 0; i < menuItems.size(); i++)
             print_sync(std::to_string(i + 1) + ". " + menuItems[i]);
+
+        std::cout << std::endl;
 
         int option = parse_int(get_input("Please select an option: "));
 
@@ -188,19 +193,17 @@ int main(int argc, const char** argv) {
             std::cout << "Press Ctrl-C to stop the test at any time...\n" << std::endl;
 
             std::cout << "Initializing " << max_threads << " threads..." << std::endl;
-            handles = std::vector<std::thread>();
+            handles.reserve(max_threads);
             for (int i = 0; i < max_threads; i++) {
 
                 print_sync("Starting thread " + std::to_string(i) + "...", INFO);
-                handles.emplace_back(std::thread(do_work));
+                handles.emplace_back(do_work);
 
             }
 
-            std::signal(SIGINT, sigint_receive);
+            std::signal(SIGINT, sigint_receive); // Dynamically create the callback for SIGINT
 
-            while (!can_exit) {
-
-            }
+            while (!can_exit) {} // Just spin until this flag is set.
 
         } else {
             break;
