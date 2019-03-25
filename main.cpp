@@ -160,7 +160,7 @@ void sigint_receive(int signum) {
 int main(int argc, const char** argv) {
 
     std::cout << "----------------------------------------" << std::endl;
-    std::cout << "  Stress++ (v0.0.1)" << std::endl;
+    std::cout << "  Stress++ (v0.1.1)" << std::endl;
     std::cout << "      Copyright (C) 2019  Jaco Malan" << std::endl;
     std::cout << "----------------------------------------\n" << std::endl;
 
