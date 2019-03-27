@@ -10,3 +10,8 @@
 ## v0.1.1 -- 2019-03-25
 
 * Optimized std::vector usage.
+
+## v0.1.2 -- 2019-03-25
+
+* Added an automatic versioning system.
+* Added packaging to the CMake project.

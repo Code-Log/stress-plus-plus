@@ -18,6 +18,7 @@
 
 */
 
+#include "StressConfig.h"
 #include <iostream>
 #include <thread>
 #include <string.h>
@@ -159,8 +160,13 @@ void sigint_receive(int signum) {
 
 int main(int argc, const char** argv) {
 
+    std::string version = "v";
+    version += std::to_string(Stress_VERSION_MAJOR) + ".";
+    version += std::to_string(Stress_VERSION_MINOR) + ".";
+    version += std::to_string(Stress_VERSION_PATCH);
+
     std::cout << "----------------------------------------" << std::endl;
-    std::cout << "  Stress++ (v0.1.1)" << std::endl;
+    std::cout << "  Stress++ (" + version + ")" << std::endl;
     std::cout << "      Copyright (C) 2019  Jaco Malan" << std::endl;
     std::cout << "----------------------------------------\n" << std::endl;
 

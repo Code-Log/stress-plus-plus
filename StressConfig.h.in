@@ -1,0 +1,3 @@
+#define Stress_VERSION_MAJOR @Stress_VERSION_MAJOR@
+#define Stress_VERSION_MINOR @Stress_VERSION_MINOR@
+#define Stress_VERSION_PATCH @Stress_VERSION_PATCH@
