@@ -47,7 +47,7 @@ enum MessageType {
 
 };
 
-std::string get_input(const char* prompt) {
+std::string get_input(const std::string& prompt) {
 
     std::string input;
     std::cout << prompt;
@@ -87,7 +87,7 @@ void print_sync(const std::string& msg) {
 
 }
 
-void print_sync(const std::string& msg, MessageType type) {
+void print_sync(const std::string& msg, const MessageType& type) {
 
     std::string cmsg;
 
