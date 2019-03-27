@@ -24,7 +24,7 @@
 #include <sstream>
 #include <mutex>
 #include <vector>
-#include <csignal>
+#include <signal.h>
 
 #define COLOR_ERROR "\u001b[31m"
 #define COLOR_WARN "\u001b[38:5:202m"
@@ -145,11 +145,11 @@ void do_work() {
 
 void sigint_receive(int signum) {
 
-    print_sync("\nSIGINT: Waiting for threads to exit...\n", INFO);
+    print_sync(std::string("\n[") + std::to_string(signum) + "]:SIGINT: Waiting for threads to exit...\n", INFO);
     should_exit = true;
 
-    for (int i = 0; i < handles.size(); i++) {
-        handles[i].join();
+    for (std::thread& handle : handles) {
+        handle.join();
     }
 
     print_sync("All threads exited...", INFO);
@@ -166,7 +166,7 @@ int main(int argc, const char** argv) {
 
     menuItems.reserve(2);
     menuItems.emplace_back("Start stress test");
-    menuItems.emplace_back("Quit");
+    menuItems.emplace_back("Exit");
 
     while (true) {
 
@@ -193,7 +193,7 @@ int main(int argc, const char** argv) {
             std::cout << "Press Ctrl-C to stop the test at any time...\n" << std::endl;
 
             std::cout << "Initializing " << max_threads << " threads..." << std::endl;
-            handles.reserve(max_threads);
+            handles.reserve((unsigned long)max_threads);
             for (int i = 0; i < max_threads; i++) {
 
                 print_sync("Starting thread " + std::to_string(i) + "...", INFO);
@@ -201,7 +201,13 @@ int main(int argc, const char** argv) {
 
             }
 
-            std::signal(SIGINT, sigint_receive); // Dynamically create the callback for SIGINT
+            struct sigaction sigint_handler {};
+
+            sigint_handler.sa_handler = sigint_receive;
+            sigemptyset(&sigint_handler.sa_mask);
+            sigint_handler.sa_flags = 0;
+
+            sigaction(SIGINT, &sigint_handler, nullptr); // Dynamically create the callback for SIGINT
 
             while (!can_exit) {} // Just spin until this flag is set.
 
