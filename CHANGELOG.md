@@ -19,3 +19,8 @@
 ## v0.1.3 -- 2019-03-28
 
 * Fixed crash on thread exit in Release mode.
+
+## v0.1.4 -- 2019-03-28
+
+* Fixed the way menus work.
+* Implemented a menu_item class.
