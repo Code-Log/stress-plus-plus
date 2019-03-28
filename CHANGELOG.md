@@ -15,3 +15,7 @@
 
 * Added an automatic versioning system.
 * Added packaging to the CMake project.
+
+## v0.1.3 -- 2019-03-28
+
+* Fixed crash on thread exit in Release mode.

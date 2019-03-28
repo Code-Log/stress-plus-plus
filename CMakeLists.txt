@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 # Configure the version number
 set(Stress_VERSION_MAJOR 0)
 set(Stress_VERSION_MINOR 1)
-set(Stress_VERSION_PATCH 2)
+set(Stress_VERSION_PATCH 3)
 
 # Add the configuration header file.
 configure_file("${PROJECT_SOURCE_DIR}/StressConfig.h.in" "${PROJECT_BINARY_DIR}/StressConfig.h")

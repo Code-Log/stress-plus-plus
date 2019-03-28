@@ -26,6 +26,7 @@
 #include <mutex>
 #include <vector>
 #include <signal.h>
+#include <condition_variable>
 
 #define COLOR_ERROR "\u001b[31m"
 #define COLOR_WARN "\u001b[38:5:202m"
@@ -39,6 +40,9 @@ bool should_exit = false;
 std::vector<std::thread> handles;
 bool can_exit = false;
 std::vector<std::string> menuItems;
+
+std::condition_variable cv;
+std::mutex cvmu;
 
 enum MessageType {
 
@@ -125,6 +129,11 @@ void do_work() {
     thread_num++;
     mu.unlock();
 
+    std::unique_lock<std::mutex> lk;
+    if (this_thread == 0) {
+        lk = std::unique_lock<std::mutex>(cvmu);
+    }
+
     std::string msg = "Thread " + std::to_string(this_thread) + " started!";
     print_sync(msg, INFO);
 
@@ -142,19 +151,33 @@ void do_work() {
 
     }
 
+    if (this_thread == 0) {
+        std::notify_all_at_thread_exit(cv, std::move(lk));
+    }
+
 }
 
 void sigint_receive(int signum) {
 
-    print_sync(std::string("\n[") + std::to_string(signum) + "]:SIGINT: Waiting for threads to exit...\n", INFO);
+    if (should_exit || can_exit) {
+
+        print_sync("Already exiting, aborting...");
+        exit(0);
+
+    }
+
+    print_sync(std::string("\n[") + std::to_string(signum) + "]:SIGINT: Sending kill signal to all threas...\n", INFO);
+    std::lock_guard<std::mutex> lg(mu);
     should_exit = true;
+    mu.unlock();
 
     for (std::thread& handle : handles) {
         handle.join();
     }
 
-    print_sync("All threads exited...", INFO);
+    std::lock_guard<std::mutex> lg2(mu);
     can_exit = true;
+    mu.unlock();
 
 }
 
@@ -199,6 +222,10 @@ int main(int argc, const char** argv) {
             std::cout << "Press Ctrl-C to stop the test at any time...\n" << std::endl;
 
             std::cout << "Initializing " << max_threads << " threads..." << std::endl;
+            handles = std::vector<std::thread>();
+            thread_num = 0;
+            should_exit = false;
+            can_exit = false;
             handles.reserve((unsigned long)max_threads);
             for (int i = 0; i < max_threads; i++) {
 
@@ -215,7 +242,11 @@ int main(int argc, const char** argv) {
 
             sigaction(SIGINT, &sigint_handler, nullptr); // Dynamically create the callback for SIGINT
 
-            while (!can_exit) {} // Just spin until this flag is set.
+            std::unique_lock<std::mutex> lk(cvmu);
+            cv.wait(lk, []{ return can_exit; });
+            cvmu.unlock();
+
+            print_sync("Restarting loop...");
 
         } else {
             break;
