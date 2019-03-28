@@ -23,13 +23,14 @@
 
 #include <string>
 #include <functional>
+#include <memory>
 
 class menu_item {
 
 private:
     std::string message;
     std::string prompt;
-    std::vector<menu_item>* submenu_items;
+    std::unique_ptr<std::vector<menu_item>> submenu_items;
     std::function<void()>* callback;
 
 public:

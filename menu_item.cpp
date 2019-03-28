@@ -24,7 +24,7 @@
 menu_item::menu_item(const std::string& msg, const std::string& pmt, std::function<void()>* cb) : prompt(pmt),
     message(msg), callback(cb) {
 
-    submenu_items = new std::vector<menu_item>();
+    submenu_items = std::make_unique<std::vector<menu_item>>();
 
 }
 
