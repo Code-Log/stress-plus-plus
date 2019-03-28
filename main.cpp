@@ -215,6 +215,18 @@ int main(int argc, const char** argv) {
 
         }
 
+        std::vector<std::string> tests;
+        tests.reserve(2);
+
+        tests.emplace_back("Ackermann");
+        tests.emplace_back("");
+
+        if (option == 1) {
+
+            option = parse_int(get_input("Which stress test would you like to run?"));
+
+        }
+
         if (option == 1) {
 
             max_threads = std::thread::hardware_concurrency();

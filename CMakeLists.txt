@@ -13,7 +13,7 @@ configure_file("${PROJECT_SOURCE_DIR}/StressConfig.h.in" "${PROJECT_BINARY_DIR}/
 include_directories("${PROJECT_BINARY_DIR}")
 
 # Create the exec.
-add_executable(Stress++ main.cpp)
+add_executable(Stress++ main.h main.cpp menu_item.h menu_item.cpp)
 target_link_libraries(Stress++ pthread)
 
 # Copy the configuration header file.
