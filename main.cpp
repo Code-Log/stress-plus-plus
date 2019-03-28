@@ -27,6 +27,8 @@
 #include <vector>
 #include <signal.h>
 #include <condition_variable>
+#include "main.h"
+#include "menu_item.h"
 
 #define COLOR_ERROR "\u001b[31m"
 #define COLOR_WARN "\u001b[38:5:202m"
@@ -39,18 +41,11 @@ int max_threads = 0;
 bool should_exit = false;
 std::vector<std::thread> handles;
 bool can_exit = false;
-std::vector<std::string> menuItems;
+
+menu_item* base;
 
 std::condition_variable cv;
 std::mutex cvmu;
-
-enum MessageType {
-
-    DEBUG,
-    INFO,
-    ERROR
-
-};
 
 std::string get_input(const std::string& prompt) {
 
@@ -193,76 +188,53 @@ int main(int argc, const char** argv) {
     std::cout << "      Copyright (C) 2019  Jaco Malan" << std::endl;
     std::cout << "----------------------------------------\n" << std::endl;
 
-    menuItems.reserve(2);
-    menuItems.emplace_back("Start stress test");
-    menuItems.emplace_back("Exit");
+    base = new menu_item("", "Please select an item.");
+    base->addSubItem("Start stress test", "Please select a test type: ", nullptr);
+    base->addSubItem("Quit", "", []{ exit(0); });
+
+    (*base)[0].addSubItem("Ackermann", "", []{
+
+        max_threads = std::thread::hardware_concurrency();
+        std::cout << "Starting 4 rounds of Ackermann stress-testing..." << std::endl;
+        std::cout << "Press Ctrl-C to stop the test at any time...\n" << std::endl;
+
+        std::cout << "Initializing " << max_threads << " threads..." << std::endl;
+        handles = std::vector<std::thread>();
+        thread_num = 0;
+        should_exit = false;
+        can_exit = false;
+        handles.reserve((unsigned long)max_threads);
+        for (int i = 0; i < max_threads; i++) {
+
+            print_sync("Starting thread " + std::to_string(i) + "...", INFO);
+            handles.emplace_back(do_work);
+
+        }
+
+        struct sigaction sigint_handler {};
+
+        sigint_handler.sa_handler = sigint_receive;
+        sigemptyset(&sigint_handler.sa_mask);
+        sigint_handler.sa_flags = 0;
+
+        sigaction(SIGINT, &sigint_handler, nullptr); // Dynamically create the callback for SIGINT
+
+        std::unique_lock<std::mutex> lk(cvmu);
+        cv.wait(lk, []{ return can_exit; });
+        cvmu.unlock();
+
+        print_sync("Restarting loop...");
+
+    });
+
+    (*base)[0].addSubItem("Pi", "", []{
+        std::cout << "Not implemented yet" << std::endl;
+        exit(0);
+    });
 
     while (true) {
-
-        // TODO: Add more options.
-
-        for (int i = 0; i < menuItems.size(); i++)
-            print_sync(std::to_string(i + 1) + ". " + menuItems[i]);
-
-        std::cout << std::endl;
-
-        int option = parse_int(get_input("Please select an option: "));
-
-        if (option <= 0 || option > menuItems.size()) {
-
-            print_sync("Please enter a valid option!");
-            return -1;
-
-        }
-
-        std::vector<std::string> tests;
-        tests.reserve(2);
-
-        tests.emplace_back("Ackermann");
-        tests.emplace_back("");
-
-        if (option == 1) {
-
-            option = parse_int(get_input("Which stress test would you like to run?"));
-
-        }
-
-        if (option == 1) {
-
-            max_threads = std::thread::hardware_concurrency();
-            std::cout << "Starting 4 rounds of Ackermann stress-testing..." << std::endl;
-            std::cout << "Press Ctrl-C to stop the test at any time...\n" << std::endl;
-
-            std::cout << "Initializing " << max_threads << " threads..." << std::endl;
-            handles = std::vector<std::thread>();
-            thread_num = 0;
-            should_exit = false;
-            can_exit = false;
-            handles.reserve((unsigned long)max_threads);
-            for (int i = 0; i < max_threads; i++) {
-
-                print_sync("Starting thread " + std::to_string(i) + "...", INFO);
-                handles.emplace_back(do_work);
-
-            }
-
-            struct sigaction sigint_handler {};
-
-            sigint_handler.sa_handler = sigint_receive;
-            sigemptyset(&sigint_handler.sa_mask);
-            sigint_handler.sa_flags = 0;
-
-            sigaction(SIGINT, &sigint_handler, nullptr); // Dynamically create the callback for SIGINT
-
-            std::unique_lock<std::mutex> lk(cvmu);
-            cv.wait(lk, []{ return can_exit; });
-            cvmu.unlock();
-
-            print_sync("Restarting loop...");
-
-        } else {
-            break;
-        }
+        
+        base->open();
 
     }
 
