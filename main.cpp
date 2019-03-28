@@ -240,7 +240,7 @@ int main(int argc, const char** argv) {
     (*base)[0].addSubItem("Pi", "", pi_callback);
 
     while (!program_exit) {
-        
+
         base->open();
 
     }
