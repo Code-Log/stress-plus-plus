@@ -41,6 +41,7 @@ int max_threads = 0;
 bool should_exit = false;
 std::vector<std::thread> handles;
 bool can_exit = false;
+bool program_exit = false;
 
 menu_item* base;
 
@@ -188,11 +189,7 @@ int main(int argc, const char** argv) {
     std::cout << "      Copyright (C) 2019  Jaco Malan" << std::endl;
     std::cout << "----------------------------------------\n" << std::endl;
 
-    base = new menu_item("", "Please select an item.");
-    base->addSubItem("Start stress test", "Please select a test type: ", nullptr);
-    base->addSubItem("Quit", "", []{ exit(0); });
-
-    (*base)[0].addSubItem("Ackermann", "", []{
+    auto ack_callback = new std::function<void()>([]{
 
         max_threads = std::thread::hardware_concurrency();
         std::cout << "Starting 4 rounds of Ackermann stress-testing..." << std::endl;
@@ -223,16 +220,26 @@ int main(int argc, const char** argv) {
         cv.wait(lk, []{ return can_exit; });
         cvmu.unlock();
 
-        print_sync("Restarting loop...");
-
+        return 0;
     });
 
-    (*base)[0].addSubItem("Pi", "", []{
+    auto exit_callback = new std::function<void()>([] { program_exit = true; });
+
+    auto pi_callback = new std::function<void()>([]{
         std::cout << "Not implemented yet" << std::endl;
         exit(0);
     });
 
-    while (true) {
+    base = new menu_item("", "Please select an item: ");
+    base->allocate(2);
+    base->addSubItem("Start stress test", "Please select a test type: ", nullptr);
+    base->addSubItem("Quit", "f", exit_callback);
+
+    (*base)[0].allocate(2);
+    (*base)[0].addSubItem("Ackermann", "", ack_callback);
+    (*base)[0].addSubItem("Pi", "", pi_callback);
+
+    while (!program_exit) {
         
         base->open();
 

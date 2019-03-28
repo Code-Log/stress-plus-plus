@@ -1,7 +1,7 @@
 #include "menu_item.h"
 #include "main.h"
 
-menu_item::menu_item(const std::string& msg, const std::string& pmt, const std::function<void()>& cb) : prompt(pmt),
+menu_item::menu_item(const std::string& msg, const std::string& pmt, std::function<void()>* cb) : prompt(pmt),
     message(msg), callback(cb) {
 
     submenu_items = new std::vector<menu_item>();
@@ -9,26 +9,26 @@ menu_item::menu_item(const std::string& msg, const std::string& pmt, const std::
 }
 
 menu_item::menu_item(const std::string& msg, const std::string& pmt) {
-    menu_item(msg, pmt, nullptr);
+    *this = menu_item(msg, pmt, nullptr);
 }
 
-menu_item::menu_item(const std::string& msg, const std::function<void()>& cb) {
-    menu_item(msg, "", cb);
+menu_item::menu_item(const std::string& msg, std::function<void()>* cb) {
+    *this = menu_item(msg, "", cb);
 }
 
-menu_item::~menu_item() {
+void menu_item::allocate(int items) {
 
-    delete submenu_items;
+    submenu_items->reserve((unsigned long)items);
 
 }
 
-void menu_item::setCallback(const std::function<void()>& cb) { callback = cb; }
+void menu_item::setCallback(std::function<void()>* cb) { callback = cb; }
 std::string menu_item::getMessage() const { return message; }
 
 void menu_item::open() const {
 
     if (callback != nullptr) {
-        callback();
+        (*callback)();
         return;
     }
 
@@ -36,7 +36,7 @@ void menu_item::open() const {
     int option = 0;
     while (!valid) {
         int count = 0;
-        for (menu_item& item : *submenu_items) {
+        for (auto &item : *submenu_items) {
 
             print_sync(std::to_string(++count) + ". " + item.getMessage());
 
@@ -55,7 +55,7 @@ void menu_item::open() const {
 
 }
 
-void menu_item::addSubItem(const std::string& msg, const std::string& pmt, const std::function<void()>& cb) {
+void menu_item::addSubItem(std::string msg, std::string pmt, std::function<void()>* cb) {
     submenu_items->emplace_back(msg, pmt, cb);
 }
 
