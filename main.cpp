@@ -118,7 +118,31 @@ void print_sync(const std::string& msg, const MessageType& type) {
 
 }
 
-void do_work() {
+void do_work_pi() {
+
+    double pi = 0;
+    unsigned long index = 1;
+    int parity = 1;
+
+    while (!should_exit) {
+
+        double frac = (double)parity;
+        frac *= 4.0f;
+        frac /= (double)index;
+        parity *= -1.0f;
+        pi += frac;
+
+        if (index % 100001 == 0) {
+            print_sync("PI: " + std::to_string(pi));
+        }
+
+        index += 2;
+
+    }
+
+}
+
+void do_work_ack() {
 
     std::lock_guard<std::mutex> guard(mu);
     int this_thread = thread_num;
@@ -204,7 +228,7 @@ int main(int argc, const char** argv) {
         for (int i = 0; i < max_threads; i++) {
 
             print_sync("Starting thread " + std::to_string(i) + "...", INFO);
-            handles.emplace_back(do_work);
+            handles.emplace_back(do_work_ack);
 
         }
 
@@ -226,8 +250,18 @@ int main(int argc, const char** argv) {
     auto exit_callback = new std::function<void()>([] { program_exit = true; });
 
     auto pi_callback = new std::function<void()>([]{
-        std::cout << "Not implemented yet" << std::endl;
-        exit(0);
+
+        max_threads = std::thread::hardware_concurrency();
+        print_sync("Starting " + std::to_string(max_threads) + " stress-testing threads. (They will all be doing the same work)");
+
+        for (int i = 0; i < max_threads; i++) {
+            handles.emplace_back(do_work_pi);
+        }
+
+        for (int i = 0; i < max_threads; i++) {
+            handles[i].join();
+        }
+
     });
 
     base = new menu_item("", "Please select an item: ");

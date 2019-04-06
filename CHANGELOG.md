@@ -24,3 +24,8 @@
 
 * Fixed the way menus work.
 * Implemented a menu_item class.
+
+## v0.2.0 -- 2019-04-06
+
+* Implemented the PI stress algorithm.
+* Optimized the threading code.
