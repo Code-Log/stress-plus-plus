@@ -20,3 +20,7 @@ rpm format.
 CMake source; it's really not that difficult. At some point I might start Cross-Compiling Stress++ to Windows.
 Anyone who would like to contribute by compiling for Windows, send me an email at: 
 [jacomalan.12@gmail.com](mailto:jacomalan.12@gmail.com)
+
+## Usage
+* command To start the program :
+stress++
